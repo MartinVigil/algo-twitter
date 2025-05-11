@@ -45,9 +45,7 @@ def main():
 
 
 def verificar_ir_atras(opcion_input):
-    if opcion_input == ATRAS:
-        return True
-    return False
+    return opcion_input == ATRAS
 
 
 # -----------------------------------------------------------------------------
@@ -72,6 +70,9 @@ def crear_tweet(id, tweets, tokens_ids):
 
 
 def normalizar_texto(texto):
+    texto = texto.lower()
+    tweet_normalizado = ""
+
     letras_con_tilde = {
         "á": "a",
         "é": "e",
@@ -84,14 +85,14 @@ def normalizar_texto(texto):
         "ö": "o",
         "ü": "u",
     }
-    tweet_normalizado = texto.lower()
-    for letra in tweet_normalizado:
+
+    for letra in texto:
         if not (letra.isalnum() or letra == " "):
-            tweet_normalizado = tweet_normalizado.replace(letra, "")
+            continue
         elif letra in letras_con_tilde:
-            tweet_normalizado = tweet_normalizado.replace(
-                letra, letras_con_tilde[letra]
-            )
+            tweet_normalizado += letras_con_tilde[letra]
+            continue
+        tweet_normalizado += letra
 
     return tweet_normalizado
 
@@ -99,46 +100,40 @@ def normalizar_texto(texto):
 # -----------------------------------------------------------------------------
 
 
-def tokenizar_por_segmentos(tweet_tokenizado_por_palabras):
-    tweet_tokenizado_por_segmentos = []
-    for i in range(len(tweet_tokenizado_por_palabras)):
-        if len(tweet_tokenizado_por_palabras[i]) >= 3:
-            for sub_i in range(len(tweet_tokenizado_por_palabras[i])):
-                longitud = sub_i + 3
-                while longitud <= len(tweet_tokenizado_por_palabras[i]):
-                    if (
-                        tweet_tokenizado_por_palabras[i][sub_i:longitud]
-                        not in tweet_tokenizado_por_segmentos
-                    ):
-                        tweet_tokenizado_por_segmentos.append(
-                            tweet_tokenizado_por_palabras[i][sub_i:longitud]
-                        )
+def tokenizar_por_segmentos(palabras):
+    segmentos = []
+
+    for palabra in palabras:
+        if len(palabra) >= 3:
+            for i in range(len(palabra)):
+                longitud = i + 3
+                while longitud <= len(palabra):
+                    if palabra[i:longitud] not in segmentos:
+                        segmentos.append(palabra[i:longitud])
                     longitud += 1
         else:
-            tweet_tokenizado_por_segmentos.append(
-                tweet_tokenizado_por_palabras[i]
-            )
+            segmentos.append(palabra)
 
-    for e in tweet_tokenizado_por_segmentos:
-        if not e.isalnum():
-            while e in tweet_tokenizado_por_segmentos:
-                tweet_tokenizado_por_segmentos.remove(e)
+    for segmento in segmentos:
+        if not segmento.isalnum():
+            while segmento in segmentos:
+                segmentos.remove(segmento)
 
-    return tweet_tokenizado_por_segmentos
+    return segmentos
 
 
 # -----------------------------------------------------------------------------
 
 
 def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
-    tweet_tokenizado_por_palabras = tweet_normalizado.split(" ")
-    lista_tokens = tokenizar_por_segmentos(tweet_tokenizado_por_palabras)
+    palabras = tweet_normalizado.split(" ")
+    tokens = tokenizar_por_segmentos(palabras)
 
-    for e in lista_tokens:
-        if e not in tokens_ids:
-            tokens_ids[e] = [id_tweet]
-        elif id_tweet not in tokens_ids[e]:
-            tokens_ids[e].append(id_tweet)
+    for token in tokens:
+        if token not in tokens_ids:
+            tokens_ids[token] = [id_tweet]
+        elif id_tweet not in tokens_ids[token]:
+            tokens_ids[token].append(id_tweet)
 
 
 # ---------------------------------------------------------------------------
@@ -152,59 +147,58 @@ def buscar_tweet(tweets, tokens_ids, accion):
             palabras = input("Ingrese el tweet a eliminar:\n")
 
         if verificar_ir_atras(palabras):
-            return "atras"
+            return False
 
         palabras_normalizadas = normalizar_texto(palabras).strip()
-        lista_palabras = palabras_normalizadas.split(" ")
-        while "" in lista_palabras:
-            lista_palabras.remove("")
 
         if palabras_normalizadas == "":
             print(INPUT_INVALIDO)
             continue
 
-        lista_ids_resultantes = encontrar_y_mostrar_tweets(
-            lista_palabras, tokens_ids, tweets
+        palabras_normalizadas = palabras_normalizadas.split()
+
+        ids_resultantes = encontrar_y_mostrar_tweets(
+            palabras_normalizadas, tokens_ids, tweets
         )
 
-        if not lista_ids_resultantes:
+        if not ids_resultantes:
             print(NO_ENCONTRADOS)
             return False
 
-        return lista_ids_resultantes
+        return ids_resultantes
 
 
 # ---------------------------------------------------------------------------
 
 
 def encontrar_y_mostrar_tweets(palabras, tokens_ids, tweets):
-    lista_ids_palabras = []
-    for e in palabras:
-        if e not in tokens_ids:
+    ids_palabras = []
+    for palabra in palabras:
+        if palabra not in tokens_ids:
             return False
-        if tokens_ids[e] not in lista_ids_palabras:
-            lista_ids_palabras.append(tokens_ids[e])
+        if tokens_ids[palabra] not in ids_palabras:
+            ids_palabras.append(tokens_ids[palabra])
 
-    lista_ids_resultantes = []
-    if len(lista_ids_palabras) == 1:
-        mostrar_tweets(lista_ids_palabras[0], tweets)
-        return lista_ids_palabras[0]
-    for id in lista_ids_palabras[0]:
+    ids_resultantes = []
+    if len(ids_palabras) == 1:
+        mostrar_tweets(ids_palabras[0], tweets)
+        return ids_palabras[0]
+    for id in ids_palabras[0]:
         agregar = True
-        for sub_id in lista_ids_palabras[1:]:
+        for sub_id in ids_palabras[1:]:
             if id not in sub_id:
                 agregar = False
                 break
         if agregar:
-            lista_ids_resultantes.append(id)
+            ids_resultantes.append(id)
 
-    if lista_ids_resultantes == []:
+    if ids_resultantes == []:
         return False
 
-    set_ids_resultantes = set(lista_ids_resultantes)
+    ids_resultantes = set(ids_resultantes)
 
-    mostrar_tweets(set_ids_resultantes, tweets)
-    return set_ids_resultantes
+    mostrar_tweets(ids_resultantes, tweets)
+    return ids_resultantes
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +206,8 @@ def encontrar_y_mostrar_tweets(palabras, tokens_ids, tweets):
 
 def mostrar_tweets(ids, tweets):
     print(RESULTADOS_BUSQUEDA)
-    for e in ids:
-        print(f"{e}. {tweets[e]}")
+    for id in ids:
+        print(f"{id}. {tweets[id]}")
 
 
 # ---------------------------------------------------------------------------
@@ -221,23 +215,21 @@ def mostrar_tweets(ids, tweets):
 
 def eliminar_tweet(tweets, tokens_ids):
     while True:
-        tweets__encontrados = buscar_tweet(tweets, tokens_ids, "eliminar")
-        if tweets__encontrados == "atras":
-            break
-        if not tweets__encontrados:
+        tweets_encontrados = buscar_tweet(tweets, tokens_ids, "eliminar")
+        if not tweets_encontrados:
             break
         while True:
             ids = input("Ingrese los numeros de tweets a eliminar:\n")
             if verificar_ir_atras(ids):
                 break
-            lista_ids = ids.split(",")
-            lista_ids_normalizada = normalizar_lista__ids(lista_ids)
-            if not lista_ids_normalizada:
+            ids = ids.split(",")
+            ids_normalizadas = normalizar_ids(ids)
+            if not ids_normalizadas:
                 print(INPUT_INVALIDO)
                 continue
-            set_ids = set(lista_ids_normalizada)
+            ids_normalizadas = set(ids_normalizadas)
             tweets_eliminados = eliminar_tweet_e_ids_de_tokens(
-                set_ids, tweets, tokens_ids
+                ids_normalizadas, tweets, tokens_ids
             )
             if not tweets_eliminados:
                 print(NUMERO_INVALIDO)
@@ -250,50 +242,50 @@ def eliminar_tweet(tweets, tokens_ids):
 # ---------------------------------------------------------------------------
 
 
-def normalizar_lista__ids(lista_ids):
-    nueva_lista_ids = []
+def normalizar_ids(ids):
+    ids_normalizadas = []
 
-    for i in range(len(lista_ids)):
-        if "-" in lista_ids[i] and lista_ids[i].count("-") == 1:
-            rango = lista_ids[i].split("-")
+    for i in range(len(ids)):
+        if "-" in ids[i] and ids[i].count("-") == 1:
+            rango = ids[i].split("-")
             num1 = rango[0].strip()
             num2 = rango[1].strip()
             if num1 <= num2 and num1.isnumeric() and num2.isnumeric():
                 for sub_i in range(int(num1), int(num2) + 1):
-                    nueva_lista_ids.append(sub_i)
+                    ids_normalizadas.append(sub_i)
             else:
                 return False
-        elif not lista_ids[i].strip().isnumeric():
+        elif not ids[i].strip().isnumeric():
             return False
         else:
-            nueva_lista_ids.append(int(lista_ids[i]))
+            ids_normalizadas.append(int(ids[i]))
 
-    return nueva_lista_ids
+    return ids_normalizadas
 
 
 # ---------------------------------------------------------------------------
 
 
-def eliminar_tweet_e_ids_de_tokens(set_ids, tweets, tokens_ids):
-    for e in set_ids:
-        if e not in tweets:
+def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
+    for id in ids:
+        if id not in tweets:
             return False
 
     tweets_eliminados = {}
 
-    for e in set_ids:
-        tweet_normalizado = normalizar_texto(tweets[e])
-        tweet_tokenizado_por_palabras = tweet_normalizado.split(" ")
-        lista_tokens = tokenizar_por_segmentos(tweet_tokenizado_por_palabras)
-        tweets_eliminados[e] = tweets[e]
+    for id in ids:
+        tweet_normalizado = normalizar_texto(tweets[id])
+        palabras = tweet_normalizado.split(" ")
+        tokens = tokenizar_por_segmentos(palabras)
+        tweets_eliminados[id] = tweets[id]
 
-        for token in lista_tokens:
+        for token in tokens:
             if len(tokens_ids[token]) > 1:
-                tokens_ids[token].remove(e)
+                tokens_ids[token].remove(id)
             else:
                 tokens_ids.pop(token)
 
-        tweets.pop(e)
+        tweets.pop(id)
     return tweets_eliminados
 
 
@@ -302,8 +294,8 @@ def eliminar_tweet_e_ids_de_tokens(set_ids, tweets, tokens_ids):
 
 def mostrar_tweets_eliminados(tweets):
     print(TWEETS_ELIMINADOS_MENSAJE)
-    for e in tweets:
-        print(f"{e}. {tweets[e]}")
+    for tweet in tweets:
+        print(f"{tweet}. {tweets[tweet]}")
 
 
 # ---------------------------------------------------------------------------
