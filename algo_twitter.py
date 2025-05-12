@@ -30,10 +30,14 @@ def main():
                 id += 1
             continue
         if opcion == "2":
-            buscar_tweet(tweets, tokens_ids)
+            buscar_tweet(
+                tweets, tokens_ids, "Ingrese la/s palabra/s clave a buscar:\n"
+            )
             continue
         if opcion == "3":
-            eliminar_tweet(tweets, tokens_ids)
+            eliminar_tweet(
+                tweets, tokens_ids, "Ingrese el tweet a eliminar:\n"
+            )
             continue
         if opcion == "4":
             print(FIN)
@@ -144,9 +148,11 @@ def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
 # ---------------------------------------------------------------------------
 
 
-def buscar_tweet(tweets, tokens_ids):
-    palabras = pedir_palabras("Ingrese la/s palabra/s clave a buscar:\n")
-    ids_resultantes = encontrar_tweets(palabras, tokens_ids, tweets)
+def buscar_tweet(tweets, tokens_ids, mensaje):
+    palabras = pedir_palabras(mensaje)
+    if not palabras:
+        return False
+    ids_resultantes = encontrar_tweets(palabras, tokens_ids)
     if not ids_resultantes:
         print(NO_ENCONTRADOS)
         return False
@@ -172,7 +178,7 @@ def pedir_palabras(mensaje):
 # ---------------------------------------------------------------------------
 
 
-def encontrar_tweets(palabras, tokens_ids, tweets):
+def encontrar_tweets(palabras, tokens_ids):
     palabras = palabras.split()
     ids_palabras = []
     for palabra in palabras:
@@ -213,30 +219,37 @@ def mostrar_tweets(ids, tweets):
 # ---------------------------------------------------------------------------
 
 
-def eliminar_tweet(tweets, tokens_ids):
+def eliminar_tweet(tweets, tokens_ids, mensaje):
+    tweets_encontrados = buscar_tweet(tweets, tokens_ids, mensaje)
+    if not tweets_encontrados:
+        return False
+    tweets_eliminados = pedir_y_eliminar_ids(tweets, tokens_ids)
+    if not tweets_eliminados:
+        return False
+    mostrar_tweets_eliminados(tweets_eliminados)
+
+
+# ---------------------------------------------------------------------------
+
+
+def pedir_y_eliminar_ids(tweets, tokens_ids):
     while True:
-        tweets_encontrados = buscar_tweet(tweets, tokens_ids, "eliminar")
-        if not tweets_encontrados:
-            break
-        while True:
-            ids = input("Ingrese los numeros de tweets a eliminar:\n")
-            if verificar_ir_atras(ids):
-                break
-            ids = ids.split(",")
-            ids_normalizadas = normalizar_ids(ids)
-            if not ids_normalizadas:
-                print(INPUT_INVALIDO)
-                continue
-            ids_normalizadas = set(ids_normalizadas)
-            tweets_eliminados = eliminar_tweet_e_ids_de_tokens(
-                ids_normalizadas, tweets, tokens_ids
-            )
-            if not tweets_eliminados:
-                print(NUMERO_INVALIDO)
-                continue
-            mostrar_tweets_eliminados(tweets_eliminados)
-            break
-        break
+        ids = input("Ingrese los numeros de tweets a eliminar:\n")
+        if verificar_ir_atras(ids):
+            return False
+        ids = ids.split(",")
+        ids_normalizadas = normalizar_ids(ids)
+        if not ids_normalizadas:
+            print(INPUT_INVALIDO)
+            continue
+        ids_normalizadas = set(ids_normalizadas)
+        tweets_eliminados = eliminar_tweet_e_ids_de_tokens(
+            ids_normalizadas, tweets, tokens_ids
+        )
+        if not tweets_eliminados:
+            print(NUMERO_INVALIDO)
+            continue
+        return tweets_eliminados
 
 
 # ---------------------------------------------------------------------------
