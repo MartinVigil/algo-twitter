@@ -30,7 +30,7 @@ def main():
                 id += 1
             continue
         if opcion == "2":
-            buscar_tweet(tweets, tokens_ids, "buscar")
+            buscar_tweet(tweets, tokens_ids)
             continue
         if opcion == "3":
             eliminar_tweet(tweets, tokens_ids)
@@ -69,7 +69,7 @@ def pedir_y_agregar_tweet(id, tweets):
         if verificar_ir_atras(tweet):
             return False
         tweet_normalizado = normalizar_texto(tweet)
-        if tweet_normalizado.strip() == "":
+        if tweet_normalizado == "":
             print(INPUT_INVALIDO)
             continue
         tweets[id] = tweet
@@ -104,7 +104,7 @@ def normalizar_texto(texto):
             continue
         tweet_normalizado += letra
 
-    return tweet_normalizado
+    return tweet_normalizado.strip()
 
 
 # -----------------------------------------------------------------------------
@@ -144,39 +144,36 @@ def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
 # ---------------------------------------------------------------------------
 
 
-def buscar_tweet(tweets, tokens_ids, accion):
-    while True:
-        if accion == "buscar":
-            palabras = input("Ingrese la/s palabra/s clave a buscar:\n")
-        else:
-            palabras = input("Ingrese el tweet a eliminar:\n")
-
-        if verificar_ir_atras(palabras):
-            return False
-
-        palabras_normalizadas = normalizar_texto(palabras).strip()
-
-        if palabras_normalizadas == "":
-            print(INPUT_INVALIDO)
-            continue
-
-        palabras_normalizadas = palabras_normalizadas.split()
-
-        ids_resultantes = encontrar_y_mostrar_tweets(
-            palabras_normalizadas, tokens_ids, tweets
-        )
-
-        if not ids_resultantes:
-            print(NO_ENCONTRADOS)
-            return False
-
-        return ids_resultantes
+def buscar_tweet(tweets, tokens_ids):
+    palabras = pedir_palabras("Ingrese la/s palabra/s clave a buscar:\n")
+    ids_resultantes = encontrar_tweets(palabras, tokens_ids, tweets)
+    if not ids_resultantes:
+        print(NO_ENCONTRADOS)
+        return False
+    mostrar_tweets(ids_resultantes, tweets)
+    return ids_resultantes
 
 
 # ---------------------------------------------------------------------------
 
 
-def encontrar_y_mostrar_tweets(palabras, tokens_ids, tweets):
+def pedir_palabras(mensaje):
+    while True:
+        palabras = input(mensaje)
+        if verificar_ir_atras(palabras):
+            return False
+        palabras_normalizadas = normalizar_texto(palabras)
+        if palabras_normalizadas == "":
+            print(INPUT_INVALIDO)
+            continue
+        return palabras_normalizadas
+
+
+# ---------------------------------------------------------------------------
+
+
+def encontrar_tweets(palabras, tokens_ids, tweets):
+    palabras = palabras.split()
     ids_palabras = []
     for palabra in palabras:
         if palabra not in tokens_ids:
@@ -186,7 +183,6 @@ def encontrar_y_mostrar_tweets(palabras, tokens_ids, tweets):
 
     ids_resultantes = []
     if len(ids_palabras) == 1:
-        mostrar_tweets(ids_palabras[0], tweets)
         return ids_palabras[0]
     for id in ids_palabras[0]:
         agregar = True
@@ -202,7 +198,6 @@ def encontrar_y_mostrar_tweets(palabras, tokens_ids, tweets):
 
     ids_resultantes = set(ids_resultantes)
 
-    mostrar_tweets(ids_resultantes, tweets)
     return ids_resultantes
 
 
