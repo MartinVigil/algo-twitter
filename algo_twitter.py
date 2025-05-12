@@ -52,6 +52,18 @@ def verificar_ir_atras(opcion_input):
 
 
 def crear_tweet(id, tweets, tokens_ids):
+    tweet_normalizado = pedir_y_agregar_tweet(id, tweets)
+    if not tweet_normalizado:
+        return False
+    agregar_tokens_indexados(id, tokens_ids, tweet_normalizado)
+    print(f"OK {id}")
+    return True
+
+
+# -----------------------------------------------------------------------------
+
+
+def pedir_y_agregar_tweet(id, tweets):
     while True:
         tweet = input("Ingrese el tweet a almacenar:\n")
         if verificar_ir_atras(tweet):
@@ -61,9 +73,7 @@ def crear_tweet(id, tweets, tokens_ids):
             print(INPUT_INVALIDO)
             continue
         tweets[id] = tweet
-        agregar_tokens_indexados(id, tokens_ids, tweet_normalizado)
-        print(f"OK {id}")
-        return True
+        return tweet_normalizado
 
 
 # -----------------------------------------------------------------------------
@@ -114,11 +124,6 @@ def tokenizar_por_segmentos(palabras):
         else:
             segmentos.append(palabra)
 
-    for segmento in segmentos:
-        if not segmento.isalnum():
-            while segmento in segmentos:
-                segmentos.remove(segmento)
-
     return segmentos
 
 
@@ -126,7 +131,7 @@ def tokenizar_por_segmentos(palabras):
 
 
 def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
-    palabras = tweet_normalizado.split(" ")
+    palabras = tweet_normalizado.split()
     tokens = tokenizar_por_segmentos(palabras)
 
     for token in tokens:
