@@ -19,6 +19,10 @@ MENU = """Seleccione una opcion:
 
 
 def main():
+    """
+    Funcion principal del programa.
+    Ofrece las opciones hasta que se ingresa el numero 4.
+    """
     id = 0
     tweets = {}
     tokens_ids = {}
@@ -30,14 +34,16 @@ def main():
                 id += 1
             continue
         if opcion == "2":
-            buscar_tweet(
-                tweets, tokens_ids, "Ingrese la/s palabra/s clave a buscar:\n"
+            palabras_buscar = pedir_palabras(
+                "Ingrese la/s palabra/s clave a buscar:\n"
             )
+            buscar_tweet(palabras_buscar, tweets, tokens_ids)
             continue
         if opcion == "3":
-            eliminar_tweet(
-                tweets, tokens_ids, "Ingrese el tweet a eliminar:\n"
+            palabras_eliminar = pedir_palabras(
+                "Ingrese el tweet a eliminar:\n"
             )
+            eliminar_tweet(palabras_eliminar, tweets, tokens_ids)
             continue
         if opcion == "4":
             print(FIN)
@@ -49,6 +55,9 @@ def main():
 
 
 def verificar_ir_atras(opcion_input):
+    """
+    Recibe un string o un numero, devuelve un booleano segun la comparacion
+    """
     return opcion_input == ATRAS
 
 
@@ -56,6 +65,12 @@ def verificar_ir_atras(opcion_input):
 
 
 def crear_tweet(id, tweets, tokens_ids):
+    """
+    Recibe un string con la id del tweet, un diccionario de tweets,
+    y un diccionario de tokens indexados.
+
+    Devuelve un booleano dependiendo de si se creo o no el tweet.
+    """
     tweet_normalizado = pedir_y_agregar_tweet(id, tweets)
     if not tweet_normalizado:
         return False
@@ -68,12 +83,20 @@ def crear_tweet(id, tweets, tokens_ids):
 
 
 def pedir_y_agregar_tweet(id, tweets):
+    """
+    Recibe un string con la id del tweet y un diccionario de tweets.
+
+    Pide un tweet hasta que se ingrese el numero 4
+    o hasta que se ingrese un tweet valido.
+
+    Devuelve el tweet normalizado.
+    """
     while True:
         tweet = input("Ingrese el tweet a almacenar:\n")
         if verificar_ir_atras(tweet):
             return False
         tweet_normalizado = normalizar_texto(tweet)
-        if tweet_normalizado == "":
+        if not tweet_normalizado:
             print(INPUT_INVALIDO)
             continue
         tweets[id] = tweet
@@ -84,6 +107,9 @@ def pedir_y_agregar_tweet(id, tweets):
 
 
 def normalizar_texto(texto):
+    """
+    Recibe un string y lo devuelve normalizado.
+    """
     texto = texto.lower()
     tweet_normalizado = ""
 
@@ -115,10 +141,19 @@ def normalizar_texto(texto):
 
 
 def tokenizar_por_segmentos(palabras):
+    """
+    Recibe una lista de strings ya normalizados.
+
+    Los tokeniza por segmentos de 3 letras como minimo
+    y los agrega a una lista, si es de menos de 3 letras
+    se agrega a la lista directamente.
+
+    Devuelve la lista de segmentos.
+    """
     segmentos = []
 
     for palabra in palabras:
-        if len(palabra) >= 3:
+        if len(palabra) > 3:
             for i in range(len(palabra)):
                 longitud = i + 3
                 while longitud <= len(palabra):
@@ -135,6 +170,13 @@ def tokenizar_por_segmentos(palabras):
 
 
 def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
+    """
+    Recibe un string con la id del tweet, un diccionario de tokens indexados
+    y un string normalizado.
+
+    Tokeniza el tweet por segmentos y agrega cada segmento a la diccionario de
+    tokens indexados, con su respectivo id.
+    """
     palabras = tweet_normalizado.split()
     tokens = tokenizar_por_segmentos(palabras)
 
@@ -148,8 +190,15 @@ def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
 # ---------------------------------------------------------------------------
 
 
-def buscar_tweet(tweets, tokens_ids, mensaje):
-    palabras = pedir_palabras(mensaje)
+def buscar_tweet(palabras, tweets, tokens_ids):
+    """
+    Recibe un string, un diccionario de tweets
+    y un diccionario de tokens indexados.
+
+    Busca las ids de los tweets que contienen esas palabras o segmentos.
+
+    Devuelve un set con los ids encontrados o False si no se encontraron.
+    """
     if not palabras:
         return False
     ids_resultantes = encontrar_tweets(palabras, tokens_ids)
@@ -164,12 +213,20 @@ def buscar_tweet(tweets, tokens_ids, mensaje):
 
 
 def pedir_palabras(mensaje):
+    """
+    Recibe un string.
+
+    Pide las palabras que se quieren buscar
+    y las valida hasta que se ingresen correctamente o se ingrese el numero 4.
+
+    Devuelve las palabras normalizadas o False si se ingresa el numero 4.
+    """
     while True:
         palabras = input(mensaje)
         if verificar_ir_atras(palabras):
             return False
         palabras_normalizadas = normalizar_texto(palabras)
-        if palabras_normalizadas == "":
+        if not palabras_normalizadas:
             print(INPUT_INVALIDO)
             continue
         return palabras_normalizadas
@@ -179,6 +236,21 @@ def pedir_palabras(mensaje):
 
 
 def encontrar_tweets(palabras, tokens_ids):
+    """
+    Recibe un string y un diccionario de tokens indexados.
+
+    Verifica que cada palabra este en algun tweet, si estan todas,
+    agrega a una lista los ids de los tweets
+    en los que se encuentra cada palabra.
+
+    Agrega a otra lista solo las ids de las palabras
+    que aparecen en todos los tweets encontrados,
+    pasa la lista a un set para filtrar los ids repetidos
+
+    Devuelve el set con los ids resultantes,
+    o False si la palabra no esta en ningun tweet
+    o las palabras si estan pero en tweets diferentes.
+    """
     palabras = palabras.split()
     ids_palabras = []
     for palabra in palabras:
@@ -219,8 +291,19 @@ def mostrar_tweets(ids, tweets):
 # ---------------------------------------------------------------------------
 
 
-def eliminar_tweet(tweets, tokens_ids, mensaje):
-    tweets_encontrados = buscar_tweet(tweets, tokens_ids, mensaje)
+def eliminar_tweet(palabras, tweets, tokens_ids):
+    """
+    Recibe un string, un diccionario de tweets y
+    un diccionario de tokens indexados.
+
+    Busca las palabras ingresadas, muestra los tweets encontrados,
+    pide las ids de los tweets que se quieren eliminar, elimina los tweets
+    y muestra los tweets eliminados.
+
+    Devuelve un booleano dependiendo de si se encontro el tweet
+    y si se borro o no.
+    """
+    tweets_encontrados = buscar_tweet(palabras, tweets, tokens_ids)
     if not tweets_encontrados:
         return False
     tweets_eliminados = pedir_y_eliminar_ids(tweets, tokens_ids)
@@ -234,6 +317,16 @@ def eliminar_tweet(tweets, tokens_ids, mensaje):
 
 
 def pedir_y_eliminar_ids(tweets, tokens_ids):
+    """
+    Recibe un diccinario de tweets y un diccionario de tokens indexados.
+
+    Pide las ids de los tweets que se quieren eliminar
+    y las valida hasta que se ingresen correctamente o se ingrese el numero 4.
+    Elimina los tweets.
+
+    Devuelve una lista con los tweets eliminados
+    o False si se ingreso el numero 4.
+    """
     while True:
         ids = input("Ingrese los numeros de tweets a eliminar:\n")
         if verificar_ir_atras(ids):
@@ -257,6 +350,12 @@ def pedir_y_eliminar_ids(tweets, tokens_ids):
 
 
 def normalizar_ids(ids):
+    """
+    Recibe un string con las id de los tweets que se quieren eliminar.
+
+    Las normaliza y las devuelve en una lista,
+    si no son validas devuelve False.
+    """
     ids_normalizadas = []
 
     for i in range(len(ids)):
@@ -281,6 +380,19 @@ def normalizar_ids(ids):
 
 
 def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
+    """
+    Recibe una lista con ids, un diccionario de tweets
+    y un diccionario de token indexados.
+
+    Verifica que las ids existan.
+    Agrega los tweets que va a eliminar a un diccionario
+    con sus respectivos ids.
+    Los elimina del diccionario de tweets
+    y elimina los ids del tweet de los tokens a los que esta asociado.
+
+    Devuelve el diccionario con los tweets eliminados
+    o False si algun id no existe.
+    """
     for id in ids:
         if id not in tweets:
             return False
