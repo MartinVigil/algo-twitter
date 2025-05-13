@@ -216,7 +216,8 @@ def pedir_palabras(mensaje):
     Pide las palabras que se quieren buscar
     y las valida hasta que se ingresen correctamente o se ingrese el numero 4.
 
-    Devuelve las palabras normalizadas o False si se ingresa el numero 4.
+    Devuelve las palabras normalizadas y separadas en una lista
+    o False si se ingresa el numero 4.
     """
     while True:
         palabras = input(mensaje)
@@ -226,7 +227,7 @@ def pedir_palabras(mensaje):
         if not palabras_normalizadas:
             print(INPUT_INVALIDO)
             continue
-        return palabras_normalizadas
+        return palabras_normalizadas.split()
 
 
 # ---------------------------------------------------------------------------
@@ -234,27 +235,37 @@ def pedir_palabras(mensaje):
 
 def encontrar_tweets(palabras, tokens_ids):
     """
-    Recibe un string y un diccionario de tokens indexados.
+    Recibe una lista de string y un diccionario de tokens indexados.
 
-    Verifica que cada palabra este en algun tweet, si estan todas,
-    agrega a una lista los ids de los tweets
-    en los que se encuentra cada palabra.
-
-    Agrega a otra lista solo las ids de las palabras
-    que aparecen en todos los tweets encontrados,
-    pasa la lista a un set para filtrar los ids repetidos
+    Verifica que cada palabra este en algun tweet.
+    Busca los ids en comun.
 
     Devuelve el set con los ids resultantes,
     o False si la palabra no esta en ningun tweet
     o las palabras si estan pero en tweets diferentes.
     """
-    palabras = palabras.split()
-    ids_palabras = []
-    for palabra in palabras:
-        if palabra not in tokens_ids:
-            return False
-        if tokens_ids[palabra] not in ids_palabras:
-            ids_palabras.append(tokens_ids[palabra])
+    ids_palabras = validar_palabras(palabras, tokens_ids)
+    if not ids_palabras:
+        return False
+    ids_resultantes = encontrar_ids_comunes(ids_palabras)
+    if not ids_resultantes:
+        return False
+    return ids_resultantes
+
+
+# ---------------------------------------------------------------------------
+
+
+def encontrar_ids_comunes(ids_palabras):
+    """
+    Recibe una lista de listas de ids.
+
+    Agrega a una lista solo los ids que aparecen en todas las listas de ids
+    y pasa la lista a un set para filtrar los ids repetidos.
+
+    Devuelve el set con los ids resultantes
+    o False si no hay ningun id en comun.
+    """
     ids_resultantes = []
     if len(ids_palabras) == 1:
         return ids_palabras[0]
@@ -266,10 +277,33 @@ def encontrar_tweets(palabras, tokens_ids):
                 break
         if agregar:
             ids_resultantes.append(id)
-    if ids_resultantes == []:
+    if not ids_resultantes:
         return False
     ids_resultantes = set(ids_resultantes)
     return ids_resultantes
+
+
+# ---------------------------------------------------------------------------
+
+
+def validar_palabras(palabras, tokens_ids):
+    """
+    Recibe una lista de strigs y un diccionario de tokens indexados.
+
+    Verifica que cada palabra este en algun tweet, si estan todas,
+    agrega a una lista los ids de los tweets
+    en los que se encuentra cada palabra.
+
+    Devuelve la lista con los ids
+    o False si no encuentra alguna palabra
+    """
+    ids_palabras = []
+    for palabra in palabras:
+        if palabra not in tokens_ids:
+            return False
+        if tokens_ids[palabra] not in ids_palabras:
+            ids_palabras.append(tokens_ids[palabra])
+    return ids_palabras
 
 
 # ---------------------------------------------------------------------------
@@ -399,7 +433,7 @@ def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
     tweets_eliminados = {}
     for id in ids:
         tweet_normalizado = normalizar_texto(tweets[id])
-        palabras = tweet_normalizado.split(" ")
+        palabras = tweet_normalizado.split()
         tokens = tokenizar_por_segmentos(palabras)
         tweets_eliminados[id] = tweets[id]
 
