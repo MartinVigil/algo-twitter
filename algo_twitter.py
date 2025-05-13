@@ -103,7 +103,7 @@ def normalizar_texto(texto):
     for letra in texto:
         if not (letra.isalnum() or letra == " "):
             continue
-        elif letra in letras_con_tilde:
+        if letra in letras_con_tilde:
             tweet_normalizado += letras_con_tilde[letra]
             continue
         tweet_normalizado += letra
@@ -227,6 +227,7 @@ def eliminar_tweet(tweets, tokens_ids, mensaje):
     if not tweets_eliminados:
         return False
     mostrar_tweets_eliminados(tweets_eliminados)
+    return True
 
 
 # ---------------------------------------------------------------------------
