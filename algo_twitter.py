@@ -74,10 +74,10 @@ def crear_tweet(id, tweets, tokens_ids):
 
     Devuelve un booleano dependiendo de si se agrego o no el tweet.
     """
-    tweet = pedir_tweet()
-    if not tweet:
+    tweet_y_normalizado = pedir_tweet()
+    if not tweet_y_normalizado:
         return False
-    tweet_normalizado = normalizar_texto(tweet)
+    tweet, tweet_normalizado = tweet_y_normalizado
     agregar_tokens_indexados(id, tokens_ids, tweet_normalizado)
     tweets[id] = tweet
     print(f"OK {id}")
@@ -92,16 +92,18 @@ def pedir_tweet():
     Pide un tweet hasta que se ingrese el numero 4
     o hasta que se ingrese un tweet valido.
 
-    Devuelve el tweet ingresado o False si se ingreso 4.
+    Devuelve el tweet ingresado y el normalizado en una tupla,
+    o False si se ingreso 4.
     """
     while True:
         tweet = input("Ingrese el tweet a almacenar:\n")
         if verificar_ir_atras(tweet):
             return False
+        tweet_normalizado = normalizar_texto(tweet)
         if not normalizar_texto(tweet):
             print(INPUT_INVALIDO)
             continue
-        return tweet
+        return (tweet, tweet_normalizado)
 
 
 # -----------------------------------------------------------------------------
@@ -113,7 +115,6 @@ def normalizar_texto(texto):
     """
     texto = texto.lower()
     tweet_normalizado = ""
-
     letras_con_tilde = {
         "á": "a",
         "é": "e",
@@ -126,7 +127,6 @@ def normalizar_texto(texto):
         "ö": "o",
         "ü": "u",
     }
-
     for letra in texto:
         if not (letra.isalnum() or letra == " "):
             continue
@@ -134,7 +134,6 @@ def normalizar_texto(texto):
             tweet_normalizado += letras_con_tilde[letra]
             continue
         tweet_normalizado += letra
-
     return tweet_normalizado.strip()
 
 
@@ -152,7 +151,6 @@ def tokenizar_por_segmentos(palabras):
     Devuelve la lista de segmentos.
     """
     segmentos = []
-
     for palabra in palabras:
         if len(palabra) > 3:
             for i in range(len(palabra)):
@@ -163,7 +161,6 @@ def tokenizar_por_segmentos(palabras):
                     longitud += 1
         else:
             segmentos.append(palabra)
-
     return segmentos
 
 
@@ -180,7 +177,6 @@ def agregar_tokens_indexados(id_tweet, tokens_ids, tweet_normalizado):
     """
     palabras = tweet_normalizado.split()
     tokens = tokenizar_por_segmentos(palabras)
-
     for token in tokens:
         if token not in tokens_ids:
             tokens_ids[token] = [id_tweet]
@@ -259,7 +255,6 @@ def encontrar_tweets(palabras, tokens_ids):
             return False
         if tokens_ids[palabra] not in ids_palabras:
             ids_palabras.append(tokens_ids[palabra])
-
     ids_resultantes = []
     if len(ids_palabras) == 1:
         return ids_palabras[0]
@@ -271,12 +266,9 @@ def encontrar_tweets(palabras, tokens_ids):
                 break
         if agregar:
             ids_resultantes.append(id)
-
     if ids_resultantes == []:
         return False
-
     ids_resultantes = set(ids_resultantes)
-
     return ids_resultantes
 
 
@@ -355,7 +347,6 @@ def normalizar_ids(ids):
     si no son validas devuelve False.
     """
     ids_normalizadas = []
-
     for i in range(len(ids)):
         if "-" in ids[i] and ids[i].count("-") == 1:
             rango = ids[i].split("-")
@@ -370,7 +361,6 @@ def normalizar_ids(ids):
             return False
         else:
             ids_normalizadas.append(int(ids[i]))
-
     return ids_normalizadas
 
 
@@ -406,9 +396,7 @@ def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
 
     Devuelve el diccionario con los tweets eliminados.
     """
-
     tweets_eliminados = {}
-
     for id in ids:
         tweet_normalizado = normalizar_texto(tweets[id])
         palabras = tweet_normalizado.split(" ")
@@ -420,7 +408,6 @@ def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
                 tokens_ids[token].remove(id)
             else:
                 tokens_ids.pop(token)
-
         tweets.pop(id)
     return tweets_eliminados
 
