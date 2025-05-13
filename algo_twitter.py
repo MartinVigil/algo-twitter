@@ -69,12 +69,17 @@ def crear_tweet(id, tweets, tokens_ids):
     Recibe un string con la id del tweet, un diccionario de tweets,
     y un diccionario de tokens indexados.
 
-    Devuelve un booleano dependiendo de si se creo o no el tweet.
+    Pide el tweet, lo normaliza y lo agrega.
+    Agrega los tokens del tweet al diccionario de tokens indexados.
+
+    Devuelve un booleano dependiendo de si se agrego o no el tweet.
     """
-    tweet_normalizado = pedir_y_agregar_tweet(id, tweets)
-    if not tweet_normalizado:
+    tweet = pedir_tweet()
+    if not tweet:
         return False
+    tweet_normalizado = normalizar_texto(tweet)
     agregar_tokens_indexados(id, tokens_ids, tweet_normalizado)
+    tweets[id] = tweet
     print(f"OK {id}")
     return True
 
@@ -82,25 +87,21 @@ def crear_tweet(id, tweets, tokens_ids):
 # -----------------------------------------------------------------------------
 
 
-def pedir_y_agregar_tweet(id, tweets):
+def pedir_tweet():
     """
-    Recibe un string con la id del tweet y un diccionario de tweets.
-
     Pide un tweet hasta que se ingrese el numero 4
     o hasta que se ingrese un tweet valido.
 
-    Devuelve el tweet normalizado.
+    Devuelve el tweet ingresado o False si se ingreso 4.
     """
     while True:
         tweet = input("Ingrese el tweet a almacenar:\n")
         if verificar_ir_atras(tweet):
             return False
-        tweet_normalizado = normalizar_texto(tweet)
-        if not tweet_normalizado:
+        if not normalizar_texto(tweet):
             print(INPUT_INVALIDO)
             continue
-        tweets[id] = tweet
-        return tweet_normalizado
+        return tweet
 
 
 # -----------------------------------------------------------------------------
@@ -306,9 +307,10 @@ def eliminar_tweet(palabras, tweets, tokens_ids):
     tweets_encontrados = buscar_tweet(palabras, tweets, tokens_ids)
     if not tweets_encontrados:
         return False
-    tweets_eliminados = pedir_y_eliminar_ids(tweets, tokens_ids)
-    if not tweets_eliminados:
+    ids = pedir_ids(tweets)
+    if not ids:
         return False
+    tweets_eliminados = eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids)
     mostrar_tweets_eliminados(tweets_eliminados)
     return True
 
@@ -316,15 +318,14 @@ def eliminar_tweet(palabras, tweets, tokens_ids):
 # ---------------------------------------------------------------------------
 
 
-def pedir_y_eliminar_ids(tweets, tokens_ids):
+def pedir_ids(tweets):
     """
-    Recibe un diccinario de tweets y un diccionario de tokens indexados.
+    Recibe un diccinario de tweets.
 
     Pide las ids de los tweets que se quieren eliminar
     y las valida hasta que se ingresen correctamente o se ingrese el numero 4.
-    Elimina los tweets.
 
-    Devuelve una lista con los tweets eliminados
+    Devuelve un set con las ids normalizadas
     o False si se ingreso el numero 4.
     """
     while True:
@@ -337,13 +338,10 @@ def pedir_y_eliminar_ids(tweets, tokens_ids):
             print(INPUT_INVALIDO)
             continue
         ids_normalizadas = set(ids_normalizadas)
-        tweets_eliminados = eliminar_tweet_e_ids_de_tokens(
-            ids_normalizadas, tweets, tokens_ids
-        )
-        if not tweets_eliminados:
+        if not validar_ids(ids_normalizadas, tweets):
             print(NUMERO_INVALIDO)
             continue
-        return tweets_eliminados
+        return ids_normalizadas
 
 
 # ---------------------------------------------------------------------------
@@ -379,23 +377,35 @@ def normalizar_ids(ids):
 # ---------------------------------------------------------------------------
 
 
+def validar_ids(ids, tweets):
+    """
+    Recibe una lista con ids y un diccionario de tweets.
+
+    Verifica que las ids existan.
+
+    Devuelve un booleano dependiendo de si existen o no todas las ids.
+    """
+    for id in ids:
+        if id not in tweets:
+            return False
+    return True
+
+
+# ---------------------------------------------------------------------------
+
+
 def eliminar_tweet_e_ids_de_tokens(ids, tweets, tokens_ids):
     """
     Recibe una lista con ids, un diccionario de tweets
     y un diccionario de token indexados.
 
-    Verifica que las ids existan.
     Agrega los tweets que va a eliminar a un diccionario
     con sus respectivos ids.
     Los elimina del diccionario de tweets
     y elimina los ids del tweet de los tokens a los que esta asociado.
 
-    Devuelve el diccionario con los tweets eliminados
-    o False si algun id no existe.
+    Devuelve el diccionario con los tweets eliminados.
     """
-    for id in ids:
-        if id not in tweets:
-            return False
 
     tweets_eliminados = {}
 
